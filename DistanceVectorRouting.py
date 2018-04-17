@@ -90,8 +90,12 @@ def InitDv(filepath):
         # data.update(dict(line.split() for line in lines))
         for line in lines:
             split = line.split()
-            routingtable[split[0]] = {'nexthop': split[0], 'cost': float(split[1]), 'port':  int(split[2]), 'ip': split[3]}
+            routingtable[split[0]] = {'nexthop': split[0], 'cost': float(split[1]), 'port':  int(GetPortNum(split[0])), 'ip': split[2]}
     return routingtable
+
+def GetPortNum(filename):
+    #Using 9000 as the base port for routers. a is 9000, b is 9001, and so on..
+    return (9000 + (ord(filename) - 97))
 
 def UpdateDv(receivedpacket):
     global dv
@@ -116,20 +120,22 @@ def UpdateDv(receivedpacket):
 def main():
     global dv, linkcontents
     try:
-        if len(sys.argv) != 3:
+        if len(sys.argv) != 2:
             print "Please check the arguments passed."
-            sys.exit("Usage: ./DistanceVectorRouting.py <port> </Data/file>")
+            sys.exit("Usage: ./DistanceVectorRouting.py </Data/file>")
 
-        port = int(sys.argv[1]) 
-        file = sys.argv[2]
+        # port = int(sys.argv[1]) 
+        file = sys.argv[1]
 
         filepath = os.getcwd() + "/" + file
+        host = ".".join((".".join(file.split(".")[:1])).split("/")[1:])
+
+        port = GetPortNum(host)
 
         if not os.path.isfile(filepath):
             sys.exit("This directory does not exist")
 
         print "------------------Starting Distance Vector Algorithm------------------"
-        # pp = pprint.PrettyPrinter()
         linkcontents = InitDv(filepath)
         dv = InitDv(filepath)
         print "********************Printing Initial Routing costs********************"
