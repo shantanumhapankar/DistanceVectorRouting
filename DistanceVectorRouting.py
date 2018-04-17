@@ -58,9 +58,9 @@ def CheckCostChange(filepath):
         test = InitDv(filepath)
         pp = pprint.PrettyPrinter()
         if test != linkcontents:
-            # pp.pprint(test)
-            # pp.pprint(linkcontents)
-            # linkcontents = test
+            pp.pprint(test)
+            pp.pprint(linkcontents)
+            pp.pprint(dv)
             for (k1,v1), (k2,v2) in zip(test.items(), linkcontents.items()):
                 if k1 != 'host' and  k2 != 'host':
                     if k1 == k2:
@@ -96,18 +96,22 @@ def InitDv(filepath):
 def UpdateDv(receivedpacket):
     global dv
     host = receivedpacket['host']
+    #Check if packet received is a neighbour.
     if host in dv:
+        #itnerate over the received packet.
         for key, value in receivedpacket.iteritems():
             if key != 'host' and key != dv['host']:
+                #check if node is in our routing table, calculate lowest cost.
                 if key in dv:
                     currcost = dv[key]['cost']
                     newcost = dv[host]['cost'] + value['cost']
                     if (newcost < currcost):
-                        dv[key]['nexthop'] = host
+                        dv[key]['nexthop'] = dv[host]['nexthop']
                         dv[key]['cost'] = newcost
+                #else, add that node.
                 else:
                     newcost = dv[host]['cost'] + value['cost']
-                    dv[key] = {'nexthop': host, 'cost': newcost, 'port':  value['port'], 'ip': value['ip']}
+                    dv[key] = {'nexthop': dv[host]['nexthop'], 'cost': newcost, 'port':  value['port'], 'ip': value['ip']}
 
 def main():
     global dv, linkcontents
@@ -126,9 +130,9 @@ def main():
 
         print "------------------Starting Distance Vector Algorithm------------------"
         # pp = pprint.PrettyPrinter()
+        linkcontents = InitDv(filepath)
         dv = InitDv(filepath)
-        linkcontents = dv
-        print "Printing Initial Routing costs..."
+        print "********************Printing Initial Routing costs********************"
         PrintLink(dv)
 
         numofneighbours = GetNumOfNeighbours(filepath)
