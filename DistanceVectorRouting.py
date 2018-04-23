@@ -23,6 +23,7 @@ class RepeatedTimer:
         self.start = time.time()
         self.event = Event()
         self.thread = Thread(target=self._target)
+        self.thread.daemon = True
         self.thread.start()
 
     def _target(self):
@@ -58,16 +59,14 @@ def CheckCostChange(filepath):
         test = InitDv(filepath)
         pp = pprint.PrettyPrinter()
         if test != linkcontents:
-            pp.pprint(test)
-            pp.pprint(linkcontents)
-            pp.pprint(dv)
             for (k1,v1), (k2,v2) in zip(test.items(), linkcontents.items()):
                 if k1 != 'host' and  k2 != 'host':
                     if k1 == k2:
                         if v1['cost'] != v2['cost']:
                             dv[k1]['cost'] = v1['cost']
                             linkcontents = test
-                            pp.pprint(dv)
+                            print "---->Link cost changed for router " + k1 + " from " + str(v1['cost']) + " to " + str(v2['cost'])
+                            # pp.pprint(dv)
 
 def GetNumOfNeighbours(filepath):
     numofneighbours = 0
@@ -118,6 +117,7 @@ def UpdateDv(receivedpacket):
                     dv[key] = {'nexthop': dv[host]['nexthop'], 'cost': newcost, 'port':  value['port'], 'ip': value['ip']}
 
 def main():
+    threads = []
     global dv, linkcontents
     try:
         if len(sys.argv) != 2:
@@ -147,7 +147,10 @@ def main():
         s.bind(('', port))
 
         broadcast = RepeatedTimer(15, BroadcastThread)
+        threads.append(broadcast)
         checkfile = Thread(target=CheckCostChange, args = (filepath,))
+        threads.append(checkfile)
+        checkfile.daemon = True
         checkfile.start()
 
         while True:
